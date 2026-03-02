@@ -1,0 +1,37 @@
+/* frontend/src/Signup.css */
+.signup-container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 30px;
+    border-radius: 15px;
+    background-color: #ffe6f0;
+    box-shadow: 0 0 10px #f0a3c1;
+    text-align: center;
+}
+
+.signup-container h2 {
+    color: #ff3399;
+}
+
+.signup-container input {
+    width: 90%;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ffb3d9;
+}
+
+.signup-container button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: #ff66b3;
+    color: white;
+    cursor: pointer;
+}
+
+.signup-container .message {
+    margin-top: 15px;
+    color: green;
+    font-weight: bold;
+}
