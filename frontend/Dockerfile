@@ -1,25 +1,21 @@
-# frontend/Dockerfile
-
-# Use Node LTS image
-FROM node:18
+FROM node:18 AS build
 
 WORKDIR /app
 
-# Copy package.json and install dependencies
+# Copy root package.json for dependencies
 COPY ../package*.json ./
+
+# Install dependencies
 RUN npm install
 
-# Copy all frontend code
+# Copy frontend folder
 COPY . .
 
-# Build frontend for production
+# Build React app
 RUN npm run build
 
-# Use Nginx to serve build files
+# Serve with Nginx
 FROM nginx:alpine
-COPY --from=0 /app/build /usr/share/nginx/html
-
-# Expose port 3000
+COPY --from=build /app/build /usr/share/nginx/html
 EXPOSE 3000
-
 CMD ["nginx", "-g", "daemon off;"]
