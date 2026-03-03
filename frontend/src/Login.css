@@ -1,0 +1,5 @@
+@import "./Signup.css";
+
+.error {
+  color: red;
+}

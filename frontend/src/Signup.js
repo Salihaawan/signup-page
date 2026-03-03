@@ -1,60 +1,33 @@
-// frontend/src/Signup.js
-import React, { useState } from 'react';
-import axios from 'axios';
-import './Signup.css'; // optional for girly styling
+import { useState } from "react";
+import "./Signup.css";
 
-function Signup() {
-    const [form, setForm] = useState({ username: '', email: '', password: '' });
-    const [message, setMessage] = useState('');
+export default function Signup() {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const res = await fetch("http://52.11.164.169:5000/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, email, password }),
+    });
+    const data = await res.text();
+    setMessage(data);
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const res = await axios.post('http://localhost:5000/signup', form);
-            setMessage(res.data.message);
-            setForm({ username: '', email: '', password: '' });
-        } catch (err) {
-            setMessage(err.response?.data?.message || 'Error occurred');
-        }
-    };
-
-    return (
-        <div className="signup-container">
-            <h2>🌸 Signup Page</h2>
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    name="username"
-                    placeholder="Username"
-                    value={form.username}
-                    onChange={handleChange}
-                    required
-                />
-                <input
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    value={form.email}
-                    onChange={handleChange}
-                    required
-                />
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={form.password}
-                    onChange={handleChange}
-                    required
-                />
-                <button type="submit">Sign Up</button>
-            </form>
-            {message && <p className="message">{message}</p>}
-        </div>
-    );
+  return (
+    <div className="form-container">
+      <h2>🌸 Create Your Account</h2>
+      <form onSubmit={handleSubmit}>
+        <input placeholder="Username" onChange={e => setUsername(e.target.value)} />
+        <input placeholder="Email" onChange={e => setEmail(e.target.value)} />
+        <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
+        <button type="submit">Signup 💕</button>
+      </form>
+      {message && <p className="message success">{message}</p>}
+    </div>
+  );
 }
-
-export default Signup;
