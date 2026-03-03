@@ -3,7 +3,7 @@ FROM node:18 AS build
 WORKDIR /app
 
 # Copy root package.json for dependencies
-COPY ../package*.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm install
