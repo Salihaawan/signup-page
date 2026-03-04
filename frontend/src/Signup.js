@@ -9,7 +9,7 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch("http://52.11.164.169:5000/signup", {
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, email, password }),
