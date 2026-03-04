@@ -10,6 +10,7 @@ RUN npm install
 
 # Copy frontend folder
 COPY . .
+COPY .env ./
 
 # Build React app
 RUN npm run build
