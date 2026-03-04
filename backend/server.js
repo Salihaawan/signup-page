@@ -5,7 +5,6 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-
 app.use(cors()); // allow all origins
 app.use(bodyParser.json());
 
@@ -17,6 +16,16 @@ const db = mysql.createPool({
   port: process.env.DB_PORT
 });
 
+// Test DB connection
+db.getConnection((err, connection) => {
+  if (err) {
+    console.error('DB connection failed:', err);
+  } else {
+    console.log('DB connected successfully');
+    connection.release();
+  }
+});
+
 // Signup endpoint
 app.post('/signup', (req, res) => {
   const { username, email, password } = req.body;
@@ -26,7 +35,7 @@ app.post('/signup', (req, res) => {
     (err, result) => {
       if (err) return res.status(500).send('Database error');
       if (result.length > 0) return res.send('User already exists');
-      
+
       db.query(
         'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
         [username, email, password],
