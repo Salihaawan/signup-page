@@ -1,9 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
+
+app.use(cors()); // allow all origins
 app.use(bodyParser.json());
 
 const db = mysql.createPool({
