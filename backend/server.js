@@ -2,11 +2,13 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2');
 const cors = require('cors');
+const morgan = require('morgan'); // ✅ add morgan here
 require('dotenv').config();
 
 const app = express();
-app.use(cors()); // allow all origins
+app.use(cors());
 app.use(bodyParser.json());
+app.use(morgan('combined')); // ✅ logs all incoming API requests
 
 const db = mysql.createPool({
   host: process.env.DB_HOST,
@@ -28,6 +30,7 @@ db.getConnection((err, connection) => {
 
 // Signup endpoint
 app.post('/signup', (req, res) => {
+  console.log('Incoming request:', req.method, req.url, req.body); // ✅ optional extra log
   const { username, email, password } = req.body;
   db.query(
     'SELECT * FROM users WHERE email = ? OR username = ?',
@@ -50,6 +53,7 @@ app.post('/signup', (req, res) => {
 
 // Login endpoint
 app.post('/login', (req, res) => {
+  console.log('Incoming request:', req.method, req.url, req.body); // ✅ optional extra log
   const { emailOrUsername, password } = req.body;
   db.query(
     'SELECT * FROM users WHERE email = ? OR username = ?',
