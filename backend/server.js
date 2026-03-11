@@ -107,4 +107,3 @@ app.post('/login', (req, res) => {
 });
 
 app.listen(5000, () => console.log('Backend running on port 5000'));
-```
