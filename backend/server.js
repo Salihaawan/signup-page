@@ -1,3 +1,4 @@
+```javascript
 const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2');
@@ -30,20 +31,37 @@ db.getConnection((err, connection) => {
 
 // Signup endpoint
 app.post('/signup', (req, res) => {
-  console.log('Incoming request:', req.method, req.url, req.body); // ✅ optional extra log
+  console.log('Incoming request:', req.method, req.url, req.body);
+
   const { username, email, password } = req.body;
+
   db.query(
     'SELECT * FROM users WHERE email = ? OR username = ?',
     [email, username],
     (err, result) => {
-      if (err) return res.status(500).send('Database error');
-      if (result.length > 0) return res.send('User already exists');
+
+      if (err) {
+        console.error("SIGNUP_ERROR: Database error", err);
+        return res.status(500).send('Database error');
+      }
+
+      if (result.length > 0) {
+        console.error("SIGNUP_FAILED: User already exists", email);
+        return res.send('User already exists');
+      }
 
       db.query(
         'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
         [username, email, password],
         (err2) => {
-          if (err2) return res.status(500).send('Database error');
+
+          if (err2) {
+            console.error("SIGNUP_ERROR: Insert failed", err2);
+            return res.status(500).send('Database error');
+          }
+
+          console.log("SIGNUP_SUCCESS:", username);
+
           res.send(`Account created! Your credentials:\nUsername: ${username}\nEmail: ${email}`);
         }
       );
@@ -53,18 +71,36 @@ app.post('/signup', (req, res) => {
 
 // Login endpoint
 app.post('/login', (req, res) => {
-  console.log('Incoming request:', req.method, req.url, req.body); // ✅ optional extra log
+
+  console.log('Incoming request:', req.method, req.url, req.body);
+
   const { emailOrUsername, password } = req.body;
+
   db.query(
     'SELECT * FROM users WHERE email = ? OR username = ?',
     [emailOrUsername, emailOrUsername],
     (err, result) => {
-      if (err) return res.status(500).send('Database error');
-      if (result.length === 0) return res.send('User does not exist');
+
+      if (err) {
+        console.error("LOGIN_ERROR: Database error", err);
+        return res.status(500).send('Database error');
+      }
+
+      if (result.length === 0) {
+        console.error("LOGIN_FAILED: User does not exist", emailOrUsername);
+        return res.send('User does not exist');
+      }
 
       if (result[0].password === password) {
+
+        console.log("LOGIN_SUCCESS:", emailOrUsername);
+
         res.send('Login successful!');
+
       } else {
+
+        console.error("LOGIN_FAILED: Wrong password", emailOrUsername);
+
         res.send('Wrong password');
       }
     }
@@ -72,3 +108,4 @@ app.post('/login', (req, res) => {
 });
 
 app.listen(5000, () => console.log('Backend running on port 5000'));
+```
