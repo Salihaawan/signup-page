@@ -24,7 +24,22 @@ db.getConnection((err, connection) => {
     console.error('DB connection failed:', err);
   } else {
     console.log('DB connected successfully');
-    connection.release();
+    connection.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) NOT NULL UNIQUE,
+        email VARCHAR(100) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `, (err) => {
+      connection.release();
+      if (err) {
+        console.error('Error creating users table:', err);
+      } else {
+        console.log('Users table is ready ✅');
+      }
+    });
   }
 });
 
