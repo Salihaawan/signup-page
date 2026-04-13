@@ -14,7 +14,7 @@ const logsAPI = require('@opentelemetry/api-logs');
 
 // ─── YOUR NGROK URL ───────────────────────────────────────
 // 👇 REPLACE THIS WITH YOUR CURRENT NGROK URL
-const NGROK_URL = ' https://a584-103-137-71-18.ngrok-free.app ';
+const NGROK_URL = 'https://a584-103-137-71-18.ngrok-free.app';
 
 // ══════════════════════════════════════════════════════════
 // 1. TRACES SETUP
