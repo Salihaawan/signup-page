@@ -1,12 +1,3 @@
-const { NodeSDK } = require('@opentelemetry/sdk-node');
-const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
-const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
-
-const sdk = new NodeSDK({
-  traceExporter: new OTLPTraceExporter({
-    url: 'http://172.31.74.150:4318/v1/traces',
-  }),
-  instrumentations: [getNodeAutoInstrumentations()],
+const exporter = new OTLPTraceExporter({
+  url: 'https://a584-103-137-71-18.ngrok-free.app/v1/traces'
 });
-
-sdk.start();
