@@ -5,12 +5,17 @@ WORKDIR /app
 # Copy root package.json for dependencies
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install OpenTelemetry browser packages
 RUN npm install @opentelemetry/sdk-trace-web \
     @opentelemetry/exporter-trace-otlp-http \
     @opentelemetry/auto-instrumentations-web \
-    @opentelemetry/context-zone
+    @opentelemetry/context-zone \
+    @opentelemetry/sdk-metrics \
+    @opentelemetry/exporter-metrics-otlp-http \
+    @opentelemetry/sdk-logs \
+    @opentelemetry/exporter-logs-otlp-http \
+    @opentelemetry/api-logs \
+    @opentelemetry/api
     
 # Copy frontend folder
 COPY . .
