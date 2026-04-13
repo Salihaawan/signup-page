@@ -28,12 +28,7 @@ const traceExporter = new OTLPTraceExporter({
   headers: { 'ngrok-skip-browser-warning': 'true' },
 });
 
-import { Resource } from '@opentelemetry/resources';
-
 const tracerProvider = new WebTracerProvider({
-  resource: new Resource({
-    'service.name': 'signup-frontend',
-  }),
   spanProcessors: [new SimpleSpanProcessor(traceExporter)],
 });
 
@@ -62,7 +57,7 @@ const meterProvider = new MeterProvider({
   ],
 });
 
-const meter = meterProvider.getMeter('signup-frontend');
+const meter = meterProvider.getMeter('signup-frontend', '1.0.0');
 
 export const frontendMetrics = {
   loginPageViews: meter.createCounter('frontend_login_page_views', {
