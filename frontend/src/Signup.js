@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./Signup.css";
+import { frontendMetrics, frontendLogger } from "./tracing";
 
 export default function Signup() {
   const [username, setUsername] = useState("");
@@ -7,15 +8,40 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
+  // Track page view when Signup page loads
+  useEffect(() => {
+    frontendMetrics.signupPageViews.add(1);
+    frontendLogger.emit({
+      severityText: 'INFO',
+      body: 'User opened Signup page',
+    });
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Track form submission
+    frontendMetrics.signupSubmits.add(1);
+    frontendLogger.emit({
+      severityText: 'INFO',
+      body: `Signup form submitted for: ${username}`,
+      attributes: { username, email },
+    });
+
     const res = await fetch(`${process.env.REACT_APP_API_URL}/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, email, password }),
     });
+
     const data = await res.text();
     setMessage(data);
+
+    frontendLogger.emit({
+      severityText: data.includes("created") ? 'INFO' : 'WARN',
+      body: `Signup result for ${username}: ${data}`,
+      attributes: { username, email, result: data },
+    });
   };
 
   return (
