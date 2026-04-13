@@ -1,16 +1,102 @@
+// ─── TRACES ───────────────────────────────────────────────
 const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 
-const exporter = new OTLPTraceExporter({
-  url: 'https://a584-103-137-71-18.ngrok-free.app/v1/traces'
+// ─── METRICS ──────────────────────────────────────────────
+const { MeterProvider, PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
+const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-http');
+
+// ─── LOGS ─────────────────────────────────────────────────
+const { LoggerProvider, BatchLogRecordProcessor } = require('@opentelemetry/sdk-logs');
+const { OTLPLogExporter } = require('@opentelemetry/exporter-logs-otlp-http');
+const logsAPI = require('@opentelemetry/api-logs');
+
+// ─── YOUR NGROK URL ───────────────────────────────────────
+// 👇 REPLACE THIS WITH YOUR CURRENT NGROK URL
+const NGROK_URL = ' https://a584-103-137-71-18.ngrok-free.app ';
+
+// ══════════════════════════════════════════════════════════
+// 1. TRACES SETUP
+// Sends: every HTTP request, every DB query, every route hit
+// ══════════════════════════════════════════════════════════
+const traceExporter = new OTLPTraceExporter({
+  url: `${NGROK_URL}/v1/traces`
 });
 
 const sdk = new NodeSDK({
-  traceExporter: exporter,
+  traceExporter,
   instrumentations: [getNodeAutoInstrumentations()],
 });
 
 sdk.start();
 
-console.log("OpenTelemetry tracing started...");
+// ══════════════════════════════════════════════════════════
+// 2. METRICS SETUP
+// Sends every 10 seconds:
+//   - How many requests hit /login
+//   - How many requests hit /signup
+//   - Response times
+// ══════════════════════════════════════════════════════════
+const metricExporter = new OTLPMetricExporter({
+  url: `${NGROK_URL}/v1/metrics`
+});
+
+const meterProvider = new MeterProvider({
+  readers: [
+    new PeriodicExportingMetricReader({
+      exporter: metricExporter,
+      exportIntervalMillis: 10000, // send metrics every 10 seconds
+    }),
+  ],
+});
+
+// Make this meter available globally in your app
+const meter = meterProvider.getMeter('signup-backend');
+
+// These are the actual metric counters your app will use
+const loginCounter = meter.createCounter('login_requests_total', {
+  description: 'Total number of login attempts',
+});
+
+const signupCounter = meter.createCounter('signup_requests_total', {
+  description: 'Total number of signup attempts',
+});
+
+const loginSuccessCounter = meter.createCounter('login_success_total', {
+  description: 'Total successful logins',
+});
+
+const loginFailCounter = meter.createCounter('login_fail_total', {
+  description: 'Total failed logins',
+});
+
+// Export counters so server.js can use them
+module.exports.metrics = {
+  loginCounter,
+  signupCounter,
+  loginSuccessCounter,
+  loginFailCounter,
+};
+
+// ══════════════════════════════════════════════════════════
+// 3. LOGS SETUP
+// Sends: all your console.log messages to collector
+// So LOGIN_SUCCESS, SIGNUP_FAILED etc appear in SigNoz
+// ══════════════════════════════════════════════════════════
+const logExporter = new OTLPLogExporter({
+  url: `${NGROK_URL}/v1/logs`
+});
+
+const loggerProvider = new LoggerProvider();
+loggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
+
+// Register globally
+logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
+
+const logger = loggerProvider.getLogger('signup-backend');
+
+// Export logger so server.js can use it
+module.exports.logger = logger;
+
+console.log("OpenTelemetry traces + metrics + logs started...");
