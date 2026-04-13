@@ -7,6 +7,7 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm install
+
 RUN npm install @opentelemetry/sdk-metrics \
     @opentelemetry/exporter-metrics-otlp-http \
     @opentelemetry/sdk-logs \
