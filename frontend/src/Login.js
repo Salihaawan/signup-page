@@ -1,20 +1,57 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./Login.css";
+import { frontendMetrics, frontendLogger } from "./tracing";
 
 export default function Login() {
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
+  // Track page view when Login page loads
+  useEffect(() => {
+    frontendMetrics.loginPageViews.add(1);
+    frontendLogger.emit({
+      severityText: 'INFO',
+      body: 'User opened Login page',
+    });
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-   const res = await fetch(`${process.env.REACT_APP_API_URL}/login`, {  // <-- COMMA added here
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ emailOrUsername, password }),
-});
+
+    // Track form submission
+    frontendMetrics.loginSubmits.add(1);
+    frontendLogger.emit({
+      severityText: 'INFO',
+      body: `Login form submitted for: ${emailOrUsername}`,
+      attributes: { emailOrUsername },
+    });
+
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emailOrUsername, password }),
+    });
+
     const data = await res.text();
     setMessage(data);
+
+    // Track success or fail
+    if (data.includes("successful")) {
+      frontendMetrics.loginSuccess.add(1);
+      frontendLogger.emit({
+        severityText: 'INFO',
+        body: `Login SUCCESS for: ${emailOrUsername}`,
+        attributes: { emailOrUsername },
+      });
+    } else {
+      frontendMetrics.loginFail.add(1);
+      frontendLogger.emit({
+        severityText: 'WARN',
+        body: `Login FAILED for: ${emailOrUsername} — reason: ${data}`,
+        attributes: { emailOrUsername, reason: data },
+      });
+    }
   };
 
   return (
