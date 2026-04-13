@@ -88,8 +88,9 @@ const logExporter = new OTLPLogExporter({
   url: `${NGROK_URL}/v1/logs`
 });
 
-const loggerProvider = new LoggerProvider();
-loggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
+const loggerProvider = new LoggerProvider({
+  processors: [new BatchLogRecordProcessor(logExporter)],
+});
 
 // Register globally
 logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
