@@ -28,7 +28,12 @@ const traceExporter = new OTLPTraceExporter({
   headers: { 'ngrok-skip-browser-warning': 'true' },
 });
 
+import { Resource } from '@opentelemetry/resources';
+
 const tracerProvider = new WebTracerProvider({
+  resource: new Resource({
+    'service.name': 'signup-frontend',
+  }),
   spanProcessors: [new SimpleSpanProcessor(traceExporter)],
 });
 
