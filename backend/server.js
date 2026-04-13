@@ -1,15 +1,15 @@
-require('./tracing');
+const { metrics, logger } = require('./tracing');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2');
 const cors = require('cors');
-const morgan = require('morgan'); // ✅ add morgan here
+const morgan = require('morgan');
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-app.use(morgan('combined')); // ✅ logs all incoming API requests
+app.use(morgan('combined'));
 
 const db = mysql.createPool({
   host: process.env.DB_HOST,
@@ -19,7 +19,6 @@ const db = mysql.createPool({
   port: process.env.DB_PORT
 });
 
-// Test DB connection
 db.getConnection((err, connection) => {
   if (err) {
     console.error('DB connection failed:', err);
@@ -44,9 +43,19 @@ db.getConnection((err, connection) => {
   }
 });
 
-// Signup endpoint
+// ── SIGNUP ────────────────────────────────────────────────
 app.post('/signup', (req, res) => {
   console.log('Incoming request:', req.method, req.url, req.body);
+
+  // INCREMENT METRIC: signup attempt
+  metrics.signupCounter.add(1);
+
+  // SEND LOG to collector
+  logger.emit({
+    severityText: 'INFO',
+    body: `Signup attempt for username: ${req.body.username}`,
+    attributes: { username: req.body.username, email: req.body.email },
+  });
 
   const { username, email, password } = req.body;
 
@@ -54,14 +63,15 @@ app.post('/signup', (req, res) => {
     'SELECT * FROM users WHERE email = ? OR username = ?',
     [email, username],
     (err, result) => {
-
       if (err) {
         console.error("SIGNUP_ERROR: Database error", err);
+        logger.emit({ severityText: 'ERROR', body: `Signup DB error: ${err.message}` });
         return res.status(500).send('Database error');
       }
 
       if (result.length > 0) {
         console.error("SIGNUP_FAILED: User already exists", email);
+        logger.emit({ severityText: 'WARN', body: `Signup failed - user exists: ${email}` });
         return res.send('User already exists');
       }
 
@@ -69,13 +79,18 @@ app.post('/signup', (req, res) => {
         'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
         [username, email, password],
         (err2) => {
-
           if (err2) {
             console.error("SIGNUP_ERROR: Insert failed", err2);
+            logger.emit({ severityText: 'ERROR', body: `Signup insert failed: ${err2.message}` });
             return res.status(500).send('Database error');
           }
 
           console.log("SIGNUP_SUCCESS:", username);
+          logger.emit({
+            severityText: 'INFO',
+            body: `Signup success for: ${username}`,
+            attributes: { username, email },
+          });
 
           res.send(`Account created! Your credentials:\nUsername: ${username}\nEmail: ${email}`);
         }
@@ -84,10 +99,19 @@ app.post('/signup', (req, res) => {
   );
 });
 
-// Login endpoint
+// ── LOGIN ─────────────────────────────────────────────────
 app.post('/login', (req, res) => {
-
   console.log('Incoming request:', req.method, req.url, req.body);
+
+  // INCREMENT METRIC: login attempt
+  metrics.loginCounter.add(1);
+
+  // SEND LOG to collector
+  logger.emit({
+    severityText: 'INFO',
+    body: `Login attempt for: ${req.body.emailOrUsername}`,
+    attributes: { emailOrUsername: req.body.emailOrUsername },
+  });
 
   const { emailOrUsername, password } = req.body;
 
@@ -95,27 +119,32 @@ app.post('/login', (req, res) => {
     'SELECT * FROM users WHERE email = ? OR username = ?',
     [emailOrUsername, emailOrUsername],
     (err, result) => {
-
       if (err) {
         console.error("LOGIN_ERROR: Database error", err);
+        logger.emit({ severityText: 'ERROR', body: `Login DB error: ${err.message}` });
         return res.status(500).send('Database error');
       }
 
       if (result.length === 0) {
         console.error("LOGIN_FAILED: User does not exist", emailOrUsername);
+        metrics.loginFailCounter.add(1);
+        logger.emit({ severityText: 'WARN', body: `Login failed - user not found: ${emailOrUsername}` });
         return res.send('User does not exist');
       }
 
       if (result[0].password === password) {
-
         console.log("LOGIN_SUCCESS:", emailOrUsername);
-
+        metrics.loginSuccessCounter.add(1);
+        logger.emit({
+          severityText: 'INFO',
+          body: `Login success for: ${emailOrUsername}`,
+          attributes: { emailOrUsername },
+        });
         res.send('Login successful!');
-
       } else {
-
         console.error("LOGIN_FAILED: Wrong password", emailOrUsername);
-
+        metrics.loginFailCounter.add(1);
+        logger.emit({ severityText: 'WARN', body: `Login failed - wrong password: ${emailOrUsername}` });
         res.send('Wrong password');
       }
     }
