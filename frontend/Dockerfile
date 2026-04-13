@@ -7,7 +7,11 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm install
-
+RUN npm install @opentelemetry/sdk-trace-web \
+    @opentelemetry/exporter-trace-otlp-http \
+    @opentelemetry/auto-instrumentations-web \
+    @opentelemetry/context-zone
+    
 # Copy frontend folder
 COPY . .
 COPY .env ./
