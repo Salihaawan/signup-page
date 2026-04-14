@@ -1,5 +1,5 @@
 const { NodeSDK } = require('@opentelemetry/sdk-node');
-const { resourceFromAttributes } = require('@opentelemetry/resources');
+const { Resource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
@@ -14,12 +14,18 @@ const logsAPI = require('@opentelemetry/api-logs');
 
 const NGROK_URL = 'https://976f-103-137-71-18.ngrok-free.app';
 
-// ✅ FIXED RESOURCE (THIS IS THE KEY FIX)
-const resource = resourceFromAttributes({
+
+// =====================
+// ✅ FIXED RESOURCE
+// =====================
+const resource = new Resource({
   [SemanticResourceAttributes.SERVICE_NAME]: 'signup-backend',
 });
 
-// ───── TRACES ─────
+
+// =====================
+// TRACES
+// =====================
 const traceExporter = new OTLPTraceExporter({
   url: `${NGROK_URL}/v1/traces`,
 });
@@ -32,7 +38,10 @@ const sdk = new NodeSDK({
 
 sdk.start();
 
-// ───── METRICS ─────
+
+// =====================
+// METRICS
+// =====================
 const metricExporter = new OTLPMetricExporter({
   url: `${NGROK_URL}/v1/metrics`,
 });
@@ -60,7 +69,10 @@ module.exports.metrics = {
   loginFailCounter,
 };
 
-// ───── LOGS ─────
+
+// =====================
+// LOGS
+// =====================
 const logExporter = new OTLPLogExporter({
   url: `${NGROK_URL}/v1/logs`,
 });
@@ -69,10 +81,11 @@ const loggerProvider = new LoggerProvider({
   processors: [new BatchLogRecordProcessor(logExporter)],
 });
 
+// IMPORTANT FIX
 logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
 
 const logger = loggerProvider.getLogger('signup-backend');
 
 module.exports.logger = logger;
 
-console.log("✅ OpenTelemetry tracing + metrics + logs started");
+console.log("OpenTelemetry tracing + metrics + logs started");
