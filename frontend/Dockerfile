@@ -21,6 +21,7 @@ RUN npm install @opentelemetry/sdk-trace-web \
 # Copy frontend folder
 COPY . .
 COPY .env ./
+ENV REACT_APP_OTEL_SERVICE_NAME=signup-frontend
 
 # Build React app
 RUN npm run build
@@ -30,6 +31,5 @@ FROM nginx:alpine
 COPY --from=build /app/build /usr/share/nginx/html
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-ENV REACT_APP_OTEL_SERVICE_NAME=signup-frontend
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
