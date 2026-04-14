@@ -1,5 +1,4 @@
 // ─── TRACES ───────────────────────────────────────────────
-import { resourceFromAttributes } from '@opentelemetry/resources';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-web';
@@ -14,7 +13,6 @@ import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import * as logsAPI from '@opentelemetry/api-logs';
 
-const SERVICE_NAME = 'signup-frontend';
 const NGROK_URL = 'https://976f-103-137-71-18.ngrok-free.app';
 
 // 1. TRACES
@@ -24,7 +22,6 @@ const traceExporter = new OTLPTraceExporter({
 });
 
 const tracerProvider = new WebTracerProvider({
-  resource: resourceFromAttributes({ 'service.name': 'signup-frontend' }),
   spanProcessors: [new SimpleSpanProcessor(traceExporter)],
 });
 
@@ -40,7 +37,6 @@ const metricExporter = new OTLPMetricExporter({
 
 
 const meterProvider = new MeterProvider({
-  resource: resourceFromAttributes({ 'service.name': 'signup-frontend' }),
   readers: [
     new PeriodicExportingMetricReader({
       exporter: metricExporter,
@@ -77,12 +73,9 @@ const logExporter = new OTLPLogExporter({
 });
 
 const loggerProvider = new LoggerProvider({
-  resource: resourceFromAttributes({ 'service.name': 'signup-frontend' }),
   processors: [new BatchLogRecordProcessor(logExporter)],
 });
 
 logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
-
-export const frontendLogger = loggerProvider.getLogger(SERVICE_NAME);
 
 console.log('Frontend OpenTelemetry traces + metrics + logs started...');
