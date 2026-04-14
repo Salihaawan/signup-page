@@ -12,7 +12,7 @@ RUN npm install @opentelemetry/sdk-metrics \
     @opentelemetry/exporter-metrics-otlp-http \
     @opentelemetry/sdk-logs \
     @opentelemetry/exporter-logs-otlp-http \
-    @opentelemetry/api-logs
+    @opentelemetry/api \
     @opentelemetry/resources \
     @opentelemetry/semantic-conventions
 
