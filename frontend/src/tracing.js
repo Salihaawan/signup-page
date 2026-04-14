@@ -1,4 +1,6 @@
 // ─── TRACES ───────────────────────────────────────────────
+import { Resource } from '@opentelemetry/resources';
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-web';
@@ -29,6 +31,9 @@ const traceExporter = new OTLPTraceExporter({
 });
 
 const tracerProvider = new WebTracerProvider({
+  resource: new Resource({
+    [SEMRESATTRS_SERVICE_NAME]: 'signup-frontend',
+  }),
   spanProcessors: [new SimpleSpanProcessor(traceExporter)],
 });
 
