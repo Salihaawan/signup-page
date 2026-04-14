@@ -15,9 +15,7 @@ RUN npm install @opentelemetry/sdk-trace-web \
     @opentelemetry/sdk-logs \
     @opentelemetry/exporter-logs-otlp-http \
     @opentelemetry/api-logs \
-    @opentelemetry/api \
-    @opentelemetry/resources \
-    @opentelemetry/semantic-conventions
+    @opentelemetry/api 
     
 # Copy frontend folder
 COPY . .
