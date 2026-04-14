@@ -18,6 +18,7 @@ COPY .env ./
 # Copy backend code
 COPY . .
 
+ENV OTEL_SERVICE_NAME=signup-backend
 # Expose port
 EXPOSE 5000
 
