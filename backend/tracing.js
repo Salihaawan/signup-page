@@ -1,4 +1,8 @@
 process.env.OTEL_SERVICE_NAME = 'signup-backend';
+
+const { Resource } = require('@opentelemetry/resources');
+const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
+
 // ─── TRACES ───────────────────────────────────────────────
 const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
@@ -25,7 +29,12 @@ const traceExporter = new OTLPTraceExporter({
   url: `${NGROK_URL}/v1/traces`
 });
 
+const resource = new Resource({
+  [SemanticResourceAttributes.SERVICE_NAME]: 'signup-backend',
+});
+
 const sdk = new NodeSDK({
+  resource,
   traceExporter,
   instrumentations: [getNodeAutoInstrumentations()],
 });
