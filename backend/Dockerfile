@@ -1,27 +1,33 @@
 FROM node:18
 
-# Set working directory
 WORKDIR /app
 
+# Copy only dependency files first (better caching)
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies (stable build)
+RUN npm ci
 
-RUN npm install @opentelemetry/sdk-metrics \
+# Copy full project
+COPY . .
+
+# Install OTEL dependencies ONCE (pinned versions = stable)
+RUN npm install \
+    @opentelemetry/sdk-node \
+    @opentelemetry/resources \
+    @opentelemetry/semantic-conventions \
+    @opentelemetry/exporter-trace-otlp-http \
+    @opentelemetry/auto-instrumentations-node \
+    @opentelemetry/sdk-metrics \
     @opentelemetry/exporter-metrics-otlp-http \
     @opentelemetry/sdk-logs \
     @opentelemetry/exporter-logs-otlp-http \
-    @opentelemetry/api 
+    @opentelemetry/api
 
-COPY .env ./
-# Copy backend code
-COPY . .
-
+# Environment variables
 ENV OTEL_SERVICE_NAME=signup-backend
 ENV OTEL_RESOURCE_ATTRIBUTES=service.name=signup-backend
-# Expose port
+
 EXPOSE 5000
 
-# Start backend
 CMD ["node", "server.js"]
