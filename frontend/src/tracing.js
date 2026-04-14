@@ -38,14 +38,6 @@ const metricExporter = new OTLPMetricExporter({
   headers: { 'ngrok-skip-browser-warning': 'true' },
 });
 
-const meterProvider = new MeterProvider({
-  readers: [
-    new PeriodicExportingMetricReader({
-      exporter: metricExporter,
-      exportIntervalMillis: 10000,
-    }),
-  ],
-});
 
 const meterProvider = new MeterProvider({
   resource: resourceFromAttributes({ 'service.name': 'signup-frontend' }),
