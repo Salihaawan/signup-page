@@ -1,3 +1,4 @@
+process.env.OTEL_SERVICE_NAME = 'signup-backend';
 // ─── TRACES ───────────────────────────────────────────────
 const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
@@ -23,8 +24,6 @@ const NGROK_URL = 'https://976f-103-137-71-18.ngrok-free.app';
 const traceExporter = new OTLPTraceExporter({
   url: `${NGROK_URL}/v1/traces`
 });
-
-process.env.OTEL_SERVICE_NAME = 'signup-backend';
 
 const sdk = new NodeSDK({
   traceExporter,
