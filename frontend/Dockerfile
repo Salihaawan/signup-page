@@ -30,6 +30,6 @@ FROM nginx:alpine
 COPY --from=build /app/build /usr/share/nginx/html
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-REACT_APP_OTEL_SERVICE_NAME=signup-frontend
+ENV REACT_APP_OTEL_SERVICE_NAME=signup-frontend
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
