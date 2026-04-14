@@ -27,9 +27,6 @@ const traceExporter = new OTLPTraceExporter({
 const sdk = new NodeSDK({
   traceExporter,
   instrumentations: [getNodeAutoInstrumentations()],
-    resource: new (require('@opentelemetry/resources').Resource)({
-    'service.name': 'signup-backend',
-  }),
 });
 
 sdk.start();
