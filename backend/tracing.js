@@ -1,5 +1,3 @@
-process.env.OTEL_SERVICE_NAME = 'signup-backend';
-
 const { Resource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 
