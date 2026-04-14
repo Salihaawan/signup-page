@@ -1,4 +1,5 @@
 // ─── TRACES ───────────────────────────────────────────────
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-web';
@@ -23,6 +24,7 @@ const traceExporter = new OTLPTraceExporter({
 });
 
 const tracerProvider = new WebTracerProvider({
+  resource: resourceFromAttributes({ 'service.name': 'signup-frontend' }),
   spanProcessors: [new SimpleSpanProcessor(traceExporter)],
 });
 
@@ -45,7 +47,15 @@ const meterProvider = new MeterProvider({
   ],
 });
 
-const meter = meterProvider.getMeter(SERVICE_NAME);
+const meterProvider = new MeterProvider({
+  resource: resourceFromAttributes({ 'service.name': 'signup-frontend' }),
+  readers: [
+    new PeriodicExportingMetricReader({
+      exporter: metricExporter,
+      exportIntervalMillis: 10000,
+    }),
+  ],
+});
 
 export const frontendMetrics = {
   loginPageViews: meter.createCounter('frontend_login_page_views', {
@@ -75,6 +85,7 @@ const logExporter = new OTLPLogExporter({
 });
 
 const loggerProvider = new LoggerProvider({
+  resource: resourceFromAttributes({ 'service.name': 'signup-frontend' }),
   processors: [new BatchLogRecordProcessor(logExporter)],
 });
 
