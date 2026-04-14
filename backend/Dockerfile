@@ -2,16 +2,16 @@ FROM node:18
 
 WORKDIR /app
 
-# Copy only dependency files first (better caching)
+# 1. Copy dependency files first (best caching)
 COPY package*.json ./
 
-# Install dependencies (stable build)
+# 2. Install ONLY once (clean + stable)
 RUN npm ci
 
-# Copy full project
+# 3. Copy full project
 COPY . .
 
-# Install OTEL dependencies ONCE (pinned versions = stable)
+# 4. Install OpenTelemetry dependencies (ONLY ONCE, stable versions)
 RUN npm install \
     @opentelemetry/sdk-node \
     @opentelemetry/resources \
@@ -24,7 +24,7 @@ RUN npm install \
     @opentelemetry/exporter-logs-otlp-http \
     @opentelemetry/api
 
-# Environment variables
+# 5. Environment variables
 ENV OTEL_SERVICE_NAME=signup-backend
 ENV OTEL_RESOURCE_ATTRIBUTES=service.name=signup-backend
 
