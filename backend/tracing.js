@@ -27,9 +27,6 @@ const traceExporter = new OTLPTraceExporter({
 const sdk = new NodeSDK({
   traceExporter,
   instrumentations: [getNodeAutoInstrumentations()],
-  resource: new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: 'signup-backend',
-  }),
 });
 
 sdk.start();
