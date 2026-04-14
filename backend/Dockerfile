@@ -13,6 +13,8 @@ RUN npm install @opentelemetry/sdk-metrics \
     @opentelemetry/sdk-logs \
     @opentelemetry/exporter-logs-otlp-http \
     @opentelemetry/api-logs
+    @opentelemetry/resources \
+    @opentelemetry/semantic-conventions
 
 COPY .env ./
 # Copy backend code
