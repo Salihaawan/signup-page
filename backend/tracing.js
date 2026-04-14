@@ -1,38 +1,27 @@
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { Resource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 
-// ─── TRACES ───────────────────────────────────────────────
-const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 
-// ─── METRICS ──────────────────────────────────────────────
 const { MeterProvider, PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
 const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-http');
 
-// ─── LOGS ─────────────────────────────────────────────────
 const { LoggerProvider, BatchLogRecordProcessor } = require('@opentelemetry/sdk-logs');
 const { OTLPLogExporter } = require('@opentelemetry/exporter-logs-otlp-http');
-const logsAPI = require('@opentelemetry/api-logs');
 
-// ─── YOUR NGROK URL ───────────────────────────────────────
-// 👇 REPLACE THIS WITH YOUR CURRENT NGROK URL
 const NGROK_URL = 'https://976f-103-137-71-18.ngrok-free.app';
 
-// ══════════════════════════════════════════════════════════
-// 1. TRACES SETUP
-// Sends: every HTTP request, every DB query, every route hit
-// ══════════════════════════════════════════════════════════
+// ─── TRACES ───
 const traceExporter = new OTLPTraceExporter({
-  url: `${NGROK_URL}/v1/traces`
-});
-
-const resource = new Resource({
-  [SemanticResourceAttributes.SERVICE_NAME]: 'signup-backend',
+  url: `${NGROK_URL}/v1/traces`,
 });
 
 const sdk = new NodeSDK({
-  resource,
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: 'signup-backend',
+  }),
   traceExporter,
   instrumentations: [getNodeAutoInstrumentations()],
 });
