@@ -1,19 +1,18 @@
-// ─── TRACES ───────────────────────────────────────────────
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-web';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
-
-// ─── METRICS ──────────────────────────────────────────────
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
-
-// ─── LOGS ─────────────────────────────────────────────────
 import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import * as logsAPI from '@opentelemetry/api-logs';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 
+const SERVICE_NAME = process.env.REACT_APP_OTEL_SERVICE_NAME || 'signup-frontend';
 const NGROK_URL = 'https://976f-103-137-71-18.ngrok-free.app';
+
+const resource = resourceFromAttributes({ 'service.name': SERVICE_NAME });
 
 // 1. TRACES
 const traceExporter = new OTLPTraceExporter({
@@ -22,6 +21,7 @@ const traceExporter = new OTLPTraceExporter({
 });
 
 const tracerProvider = new WebTracerProvider({
+  resource,
   spanProcessors: [new SimpleSpanProcessor(traceExporter)],
 });
 
@@ -35,8 +35,8 @@ const metricExporter = new OTLPMetricExporter({
   headers: { 'ngrok-skip-browser-warning': 'true' },
 });
 
-
 const meterProvider = new MeterProvider({
+  resource,
   readers: [
     new PeriodicExportingMetricReader({
       exporter: metricExporter,
@@ -44,6 +44,8 @@ const meterProvider = new MeterProvider({
     }),
   ],
 });
+
+const meter = meterProvider.getMeter(SERVICE_NAME);
 
 export const frontendMetrics = {
   loginPageViews: meter.createCounter('frontend_login_page_views', {
@@ -73,9 +75,12 @@ const logExporter = new OTLPLogExporter({
 });
 
 const loggerProvider = new LoggerProvider({
+  resource,
   processors: [new BatchLogRecordProcessor(logExporter)],
 });
 
 logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
 
-console.log('Frontend OpenTelemetry traces + metrics + logs started...');
+export const frontendLogger = loggerProvider.getLogger(SERVICE_NAME);
+
+console.log('Frontend OpenTelemetry started for service:', SERVICE_NAME);
