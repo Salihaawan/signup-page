@@ -24,6 +24,8 @@ const traceExporter = new OTLPTraceExporter({
   url: `${NGROK_URL}/v1/traces`
 });
 
+process.env.OTEL_SERVICE_NAME = 'signup-backend';
+
 const sdk = new NodeSDK({
   traceExporter,
   instrumentations: [getNodeAutoInstrumentations()],
