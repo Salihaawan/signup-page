@@ -9,8 +9,9 @@ import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import * as logsAPI from '@opentelemetry/api-logs';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 
-const SERVICE_NAME = process.env.REACT_APP_OTEL_SERVICE_NAME || 'signup-frontend';
-const NGROK_URL = 'https://976f-103-137-71-18.ngrok-free.app';
+const resource = resourceFromAttributes({
+  'service.name': 'signup-frontend',
+});
 
 const resource = resourceFromAttributes({ 'service.name': SERVICE_NAME });
 
