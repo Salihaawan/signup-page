@@ -14,17 +14,9 @@ import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import * as logsAPI from '@opentelemetry/api-logs';
 
 const SERVICE_NAME = 'signup-frontend';
-
-// ─── YOUR NGROK URL ───────────────────────────────────────
-// 👇 REPLACE WITH YOUR CURRENT NGROK URL (no trailing slash, no spaces)
 const NGROK_URL = 'https://976f-103-137-71-18.ngrok-free.app';
 
-// ══════════════════════════════════════════════════════════
-// 1. TRACES SETUP
-// Tracks: every fetch() call from Login.js and Signup.js
-// Tracks: how long API call took
-// Tracks: page load timing
-// ══════════════════════════════════════════════════════════
+// 1. TRACES
 const traceExporter = new OTLPTraceExporter({
   url: `${NGROK_URL}/v1/traces`,
   headers: { 'ngrok-skip-browser-warning': 'true' },
@@ -38,13 +30,7 @@ tracerProvider.register({
   contextManager: new ZoneContextManager(),
 });
 
-// ══════════════════════════════════════════════════════════
-// 2. METRICS SETUP
-// Tracks every 10 seconds:
-//   - How many times login page loaded
-//   - How many times signup page loaded
-//   - How many fetch errors happened
-// ══════════════════════════════════════════════════════════
+// 2. METRICS
 const metricExporter = new OTLPMetricExporter({
   url: `${NGROK_URL}/v1/metrics`,
   headers: { 'ngrok-skip-browser-warning': 'true' },
@@ -60,7 +46,6 @@ const meterProvider = new MeterProvider({
 });
 
 const meter = meterProvider.getMeter(SERVICE_NAME);
-export const frontendLogger = loggerProvider.getLogger(SERVICE_NAME);
 
 export const frontendMetrics = {
   loginPageViews: meter.createCounter('frontend_login_page_views', {
@@ -83,13 +68,7 @@ export const frontendMetrics = {
   }),
 };
 
-// ══════════════════════════════════════════════════════════
-// 3. LOGS SETUP
-// Sends browser-side logs to collector:
-//   - "User opened login page"
-//   - "Login form submitted"
-//   - "Login success / fail"
-// ══════════════════════════════════════════════════════════
+// 3. LOGS
 const logExporter = new OTLPLogExporter({
   url: `${NGROK_URL}/v1/logs`,
   headers: { 'ngrok-skip-browser-warning': 'true' },
@@ -101,6 +80,6 @@ const loggerProvider = new LoggerProvider({
 
 logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
 
-export const frontendLogger = loggerProvider.getLogger('signup-frontend');
+export const frontendLogger = loggerProvider.getLogger(SERVICE_NAME);
 
 console.log('Frontend OpenTelemetry traces + metrics + logs started...');
