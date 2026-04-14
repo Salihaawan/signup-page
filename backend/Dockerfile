@@ -19,6 +19,7 @@ COPY .env ./
 COPY . .
 
 ENV OTEL_SERVICE_NAME=signup-backend
+ENV OTEL_RESOURCE_ATTRIBUTES=service.name=signup-backend
 # Expose port
 EXPOSE 5000
 
