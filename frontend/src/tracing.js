@@ -25,6 +25,7 @@ const traceExporter = new OTLPTraceExporter({
 const tracerProvider = new WebTracerProvider({
   spanProcessors: [new SimpleSpanProcessor(traceExporter)],
 });
+tracerProvider.resource.attributes['service.name'] = 'signup-frontend';
 
 tracerProvider.register({
   contextManager: new ZoneContextManager(),
@@ -77,6 +78,7 @@ const logExporter = new OTLPLogExporter({
 const loggerProvider = new LoggerProvider({
   processors: [new BatchLogRecordProcessor(logExporter)],
 });
+loggerProvider.resource.attributes['service.name'] = 'signup-frontend';
 
 logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
 
