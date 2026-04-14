@@ -13,6 +13,8 @@ import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import * as logsAPI from '@opentelemetry/api-logs';
 
+const SERVICE_NAME = 'signup-frontend';
+
 // ─── YOUR NGROK URL ───────────────────────────────────────
 // 👇 REPLACE WITH YOUR CURRENT NGROK URL (no trailing slash, no spaces)
 const NGROK_URL = 'https://976f-103-137-71-18.ngrok-free.app';
@@ -57,7 +59,8 @@ const meterProvider = new MeterProvider({
   ],
 });
 
-const meter = meterProvider.getMeter('signup-frontend');
+const meter = meterProvider.getMeter(SERVICE_NAME);
+export const frontendLogger = loggerProvider.getLogger(SERVICE_NAME);
 
 export const frontendMetrics = {
   loginPageViews: meter.createCounter('frontend_login_page_views', {
