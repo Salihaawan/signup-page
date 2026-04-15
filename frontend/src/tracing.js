@@ -9,16 +9,14 @@ import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import * as logsAPI from '@opentelemetry/api-logs';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 
-// ✅ FIXED: Hardcoded values (no env confusion)
-const SERVICE_NAME = 'signup-frontend';
-const NGROK_URL = 'https://976f-103-137-71-18.ngrok-free.app';
+const SERVICE_NAME = process.env.REACT_APP_OTEL_SERVICE_NAME || 'signup-frontend';
+const NGROK_URL = process.env.REACT_APP_NGROK_URL;
 
-// ✅ SINGLE resource (no duplicate)
-const resource = resourceFromAttributes({
-  'service.name': SERVICE_NAME,
-});
+console.log(`Frontend OTel starting — service: ${SERVICE_NAME}, collector: ${NGROK_URL}`);
 
-// ─────────────── TRACES ───────────────
+const resource = resourceFromAttributes({ 'service.name': SERVICE_NAME });
+
+// 1. TRACES
 const traceExporter = new OTLPTraceExporter({
   url: `${NGROK_URL}/v1/traces`,
   headers: { 'ngrok-skip-browser-warning': 'true' },
@@ -33,7 +31,7 @@ tracerProvider.register({
   contextManager: new ZoneContextManager(),
 });
 
-// ─────────────── METRICS ───────────────
+// 2. METRICS
 const metricExporter = new OTLPMetricExporter({
   url: `${NGROK_URL}/v1/metrics`,
   headers: { 'ngrok-skip-browser-warning': 'true' },
@@ -72,7 +70,7 @@ export const frontendMetrics = {
   }),
 };
 
-// ─────────────── LOGS ───────────────
+// 3. LOGS
 const logExporter = new OTLPLogExporter({
   url: `${NGROK_URL}/v1/logs`,
   headers: { 'ngrok-skip-browser-warning': 'true' },
@@ -87,4 +85,4 @@ logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
 
 export const frontendLogger = loggerProvider.getLogger(SERVICE_NAME);
 
-console.log('Frontend OpenTelemetry started for service:', SERVICE_NAME);
+console.log(`Frontend OpenTelemetry started for service: ${SERVICE_NAME}`);
