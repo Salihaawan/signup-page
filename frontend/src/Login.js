@@ -54,6 +54,9 @@ export default function Login() {
         headers: headers,
         body: JSON.stringify({ emailOrUsername, password }),
       });
+// ── NEW SPAN (wraps response processing — from backend reply to UI display) ──
+      const responseSpan = tracer.startSpan('login-response-processing', {}, ctx);
+      // ─────────────────────────────────────────────────────────────────────────────
 
       const data = await res.text();
       setMessage(data);
@@ -66,6 +69,10 @@ export default function Login() {
           attributes: { emailOrUsername },
         });
         span.setAttribute('login.result', 'success');
+        // ── NEW (mark response span with result) ──
+        responseSpan.setAttribute('login.result', 'success');
+        responseSpan.setAttribute('response.message', data);
+        // ──────────────────────────────────────── 
       } else {
         frontendMetrics.loginFail.add(1);
         frontendLogger.emit({
@@ -75,7 +82,15 @@ export default function Login() {
         });
         span.setAttribute('login.result', 'failed');
         span.setAttribute('login.reason', data);
+        // ── NEW (mark response span with failure) ──
+        responseSpan.setAttribute('login.result', 'failed');
+        responseSpan.setAttribute('login.reason', data);
+        responseSpan.setAttribute('response.message', data);
+        // ────────────────────────────────────────── 
       }
+       // ── NEW (close response span here after UI updated) ──
+      responseSpan.end();
+      // ─────────────────────────────────────────────────────
     } catch (err) {
       span.setAttribute('error', true);
       span.setAttribute('error.message', err.message);
