@@ -4,7 +4,13 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm ci
+RUN npm install
+
+RUN npm install @opentelemetry/sdk-metrics \
+    @opentelemetry/exporter-metrics-otlp-http \
+    @opentelemetry/sdk-logs \
+    @opentelemetry/exporter-logs-otlp-http \
+    @opentelemetry/api
 
 COPY . .
 
