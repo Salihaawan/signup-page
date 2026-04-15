@@ -56,7 +56,7 @@ export default function Signup() {
       });
 
       // ── NEW SPAN (wraps response processing — from backend reply to UI display) ──
-      const responseSpan = tracer.startSpan('signup-response-processing', {}, ctx);
+      const responseSpan = api.context.with(ctx, () => tracer.startSpan('signup-response-processing'));
       // ─────────────────────────────────────────────────────────────────────────────
       
       const data = await res.text();
