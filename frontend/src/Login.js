@@ -55,7 +55,10 @@ export default function Login() {
         body: JSON.stringify({ emailOrUsername, password }),
       });
 // ── NEW SPAN (wraps response processing — from backend reply to UI display) ──
-      const responseSpan = api.context.with(ctx, () => tracer.startSpan('login-response-processing'));
+      let responseSpan;
+      api.context.with(ctx, () => {
+       responseSpan = tracer.startSpan('login-response-processing');
+   });
       // ─────────────────────────────────────────────────────────────────────────────
 
       const data = await res.text();
