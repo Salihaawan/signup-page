@@ -7,14 +7,18 @@ import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import * as logsAPI from '@opentelemetry/api-logs';
-import { resourceFromAttributes } from '@opentelemetry/resources';
+import { Resource } from '@opentelemetry/resources';
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
 const SERVICE_NAME = process.env.REACT_APP_OTEL_SERVICE_NAME || 'signup-frontend';
 const NGROK_URL = process.env.REACT_APP_NGROK_URL;
 
 console.log(`Frontend OTel starting — service: ${SERVICE_NAME}, collector: ${NGROK_URL}`);
 
-const resource = resourceFromAttributes({ 'service.name': SERVICE_NAME });
+// RESOURCE — same pattern as backend now
+const resource = new Resource({
+  [SEMRESATTRS_SERVICE_NAME]: SERVICE_NAME,
+});
 
 // 1. TRACES
 const traceExporter = new OTLPTraceExporter({
