@@ -16,15 +16,9 @@ RUN npm install @opentelemetry/sdk-trace-web \
     @opentelemetry/api \
     @opentelemetry/resources
 
+COPY .env .env
+
 COPY . .
-
-ARG REACT_APP_API_URL
-ARG REACT_APP_OTEL_SERVICE_NAME
-ARG REACT_APP_NGROK_URL
-
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
-ENV REACT_APP_OTEL_SERVICE_NAME=$REACT_APP_OTEL_SERVICE_NAME
-ENV REACT_APP_NGROK_URL=$REACT_APP_NGROK_URL
 
 RUN npm run build
 
