@@ -12,7 +12,6 @@ export default function Signup() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    // Manual span for page view
     const span = tracer.startSpan('signup-page-view');
     frontendMetrics.signupPageViews.add(1);
     frontendLogger.emit({
@@ -25,20 +24,21 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Manual span for signup request
     const span = tracer.startSpan('signup-form-submit');
     span.setAttribute('user', username);
 
-    // ── NEW BLOCK (inject traceparent header into fetch so backend continues same trace) ──
+    // ── inject traceparent header into fetch so backend continues same trace ──
     const ctx = api.trace.setSpan(api.context.active(), span);
     const headers = {
       "Content-Type": "application/json",
     };
     propagator.inject(ctx, headers, {
-      set: (carrier, key, value) => { carrier[key] = value; }
+      set: (carrier, key, value) => {
+        carrier[key] = value;
+      }
     });
-    // ─────────────────────────────────────────────────────────────────────────────────────
-    
+    // ─────────────────────────────────────────────────────────────────────────
+
     frontendMetrics.signupSubmits.add(1);
     frontendLogger.emit({
       severityText: 'INFO',
@@ -49,21 +49,22 @@ export default function Signup() {
     try {
       const res = await fetch(`${process.env.REACT_APP_API_URL}/signup`, {
         method: "POST",
-        // ── UPDATED (headers now includes traceparent alongside Content-Type) ──
         headers: headers,
-        // ───────────────────────────────────────────────────────────────────────
         body: JSON.stringify({ username, email, password }),
       });
 
-      // ── NEW SPAN (wraps response processing — from backend reply to UI display) ──
-        let responseSpan;
-        api.context.with(ctx, () => {
-          responseSpan = tracer.startSpan('signup-response-processing');
-    });
-      // ─────────────────────────────────────────────────────────────────────────────
-      
+      // ── response time tracking using span attributes ──
+      const responseStartTime = Date.now();
       const data = await res.text();
+      const responseEndTime = Date.now();
       setMessage(data);
+
+      // ── add response timing directly on main span ──
+      span.setAttribute('response.received.ms', responseEndTime - responseStartTime);
+      span.setAttribute('response.message', data);
+      span.setAttribute('response.status', res.status);
+      span.setAttribute('user.username', username);
+      span.setAttribute('user.email', email);
 
       frontendLogger.emit({
         severityText: data.includes("created") ? 'INFO' : 'WARN',
@@ -72,16 +73,8 @@ export default function Signup() {
       });
 
       span.setAttribute('signup.result', data.includes("created") ? 'success' : 'failed');
-      // ── NEW (mark response span with result) ──
-      responseSpan.setAttribute('signup.result', data.includes("created") ? 'success' : 'failed');
-      responseSpan.setAttribute('response.message', data);
-      responseSpan.setAttribute('user.username', username);
-      responseSpan.setAttribute('user.email', email);
-      // ─────────────────────────────────────────
+      // ─────────────────────────────────────────────────────────────────
 
-      // ── NEW (close response span here after UI updated) ──
-      responseSpan.end();
-      // ─────────────────────────────────────────────────────
     } catch (err) {
       span.setAttribute('error', true);
       span.setAttribute('error.message', err.message);
