@@ -8,13 +8,15 @@ import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import * as logsAPI from '@opentelemetry/api-logs';
 import { resourceFromAttributes } from '@opentelemetry/resources';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
+import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 
 const SERVICE_NAME = process.env.REACT_APP_OTEL_SERVICE_NAME || 'signup-frontend';
 const NGROK_URL = process.env.REACT_APP_NGROK_URL;
 
 console.log(`Frontend OTel starting — service: ${SERVICE_NAME}, collector: ${NGROK_URL}`);
 
-// RESOURCE — same pattern as backend now
 const resource = resourceFromAttributes({
   'service.name': SERVICE_NAME,
 });
@@ -32,6 +34,24 @@ const tracerProvider = new WebTracerProvider({
 
 tracerProvider.register({
   contextManager: new ZoneContextManager(),
+});
+
+// Register fetch and XHR instrumentation — this is what creates frontend spans
+registerInstrumentations({
+  instrumentations: [
+    new FetchInstrumentation({
+      propagateTraceHeaderCorsUrls: [
+        new RegExp(`.*`),
+      ],
+      clearTimingResources: true,
+    }),
+    new XMLHttpRequestInstrumentation({
+      propagateTraceHeaderCorsUrls: [
+        new RegExp(`.*`),
+      ],
+    }),
+  ],
+  tracerProvider,
 });
 
 // 2. METRICS
