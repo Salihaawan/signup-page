@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "./Login.css";
 // ── UPDATED IMPORT (added propagator and context imports here) ── 2nd import
-import { frontendMetrics, frontendLogger, tracer } from "./tracing";
+import { frontendMetrics, frontendLogger, tracer, propagator } from "./tracing";
 import * as api from '@opentelemetry/api';
 // ───────────────────────────────────────────────────────────────
 
