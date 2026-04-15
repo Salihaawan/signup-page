@@ -10,11 +10,18 @@ const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-htt
 const { LoggerProvider, BatchLogRecordProcessor } = require('@opentelemetry/sdk-logs');
 const { OTLPLogExporter } = require('@opentelemetry/exporter-logs-otlp-http');
 const logsAPI = require('@opentelemetry/api-logs');
+const { Resource } = require('@opentelemetry/resources');
+const { SEMRESATTRS_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
 
 const NGROK_URL = process.env.NGROK_URL;
 const SERVICE_NAME = process.env.OTEL_SERVICE_NAME;
 
 console.log(`OTel starting — service: ${SERVICE_NAME}, collector: ${NGROK_URL}`);
+
+// RESOURCE — this is what was missing for logs and metrics
+const resource = new Resource({
+  [SEMRESATTRS_SERVICE_NAME]: SERVICE_NAME,
+});
 
 // 1. TRACES
 const traceExporter = new OTLPTraceExporter({
@@ -22,6 +29,7 @@ const traceExporter = new OTLPTraceExporter({
 });
 
 const sdk = new NodeSDK({
+  resource,
   traceExporter,
   instrumentations: [getNodeAutoInstrumentations()],
 });
@@ -34,6 +42,7 @@ const metricExporter = new OTLPMetricExporter({
 });
 
 const meterProvider = new MeterProvider({
+  resource,
   readers: [
     new PeriodicExportingMetricReader({
       exporter: metricExporter,
@@ -70,6 +79,7 @@ const logExporter = new OTLPLogExporter({
 });
 
 const loggerProvider = new LoggerProvider({
+  resource,
   processors: [new BatchLogRecordProcessor(logExporter)],
 });
 
