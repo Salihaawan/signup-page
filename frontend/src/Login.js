@@ -28,14 +28,16 @@ export default function Login() {
     const span = tracer.startSpan('login-form-submit');
     span.setAttribute('user', emailOrUsername);
 
-    / ── NEW BLOCK (inject traceparent header into fetch so backend continues same trace) ──
+    //── NEW BLOCK (inject traceparent header into fetch so backend continues same trace) ──
     const ctx = api.trace.setSpan(api.context.active(), span);
     const headers = {
       "Content-Type": "application/json",
     };
     propagator.inject(ctx, headers, {
-      set: (carrier, key, value) => { carrier[key] = value; }
-    });
+  set: (carrier, key, value) => {
+    carrier[key] = value;
+  }
+});
     // ─────────────────────────────────────────────────────────────────────────────────────
     
     frontendMetrics.loginSubmits.add(1);
