@@ -55,6 +55,10 @@ export default function Signup() {
         body: JSON.stringify({ username, email, password }),
       });
 
+      // ── NEW SPAN (wraps response processing — from backend reply to UI display) ──
+      const responseSpan = tracer.startSpan('signup-response-processing', {}, ctx);
+      // ─────────────────────────────────────────────────────────────────────────────
+      
       const data = await res.text();
       setMessage(data);
 
@@ -65,6 +69,16 @@ export default function Signup() {
       });
 
       span.setAttribute('signup.result', data.includes("created") ? 'success' : 'failed');
+      // ── NEW (mark response span with result) ──
+      responseSpan.setAttribute('signup.result', data.includes("created") ? 'success' : 'failed');
+      responseSpan.setAttribute('response.message', data);
+      responseSpan.setAttribute('user.username', username);
+      responseSpan.setAttribute('user.email', email);
+      // ─────────────────────────────────────────
+
+      // ── NEW (close response span here after UI updated) ──
+      responseSpan.end();
+      // ─────────────────────────────────────────────────────
     } catch (err) {
       span.setAttribute('error', true);
       span.setAttribute('error.message', err.message);
