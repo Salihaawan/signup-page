@@ -1,3 +1,6 @@
+  // ── NEW LINE (propagator added here) ──────────────────────
+import { W3CTraceContextPropagator } from '@opentelemetry/core';
+
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-web';
@@ -32,7 +35,12 @@ const tracerProvider = new WebTracerProvider({
 
 tracerProvider.register({
   contextManager: new ZoneContextManager(),
+    // ── NEW LINE (propagator added here) ──────────────────────
+   propagator: new W3CTraceContextPropagator(),
 });
+
+// ── NEW EXPORT (added here so Login.js and Signup.js can inject headers) ──
+export const propagator = new W3CTraceContextPropagator();
 
 // Export tracer so components can create spans manually
 export const tracer = api.trace.getTracer(SERVICE_NAME);
