@@ -47,19 +47,28 @@ export default function Signup() {
     });
 
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/signup`, {
+           const res = await fetch(`${process.env.REACT_APP_API_URL}/signup`, {
         method: "POST",
         headers: headers,
         body: JSON.stringify({ username, email, password }),
       });
 
-      // ── response time tracking using span attributes ──
+      // ── span event marks exact moment response arrived from backend ──
+      span.addEvent('response-received-from-backend', {
+        'http.status_code': res.status,
+      });
+
       const responseStartTime = Date.now();
       const data = await res.text();
       const responseEndTime = Date.now();
       setMessage(data);
 
-      // ── add response timing directly on main span ──
+      // ── span event marks when frontend finished processing response ──
+      span.addEvent('response-processed-on-frontend', {
+        'response.message': data,
+        'response.parse.ms': responseEndTime - responseStartTime,
+      });
+
       span.setAttribute('response.received.ms', responseEndTime - responseStartTime);
       span.setAttribute('response.message', data);
       span.setAttribute('response.status', res.status);
