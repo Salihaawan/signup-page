@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import "./Login.css";
+// ── UPDATED IMPORT (added propagator and context imports here) ── 2nd import
 import { frontendMetrics, frontendLogger, tracer } from "./tracing";
+import * as api from '@opentelemetry/api';
+// ───────────────────────────────────────────────────────────────
 
 export default function Login() {
   const [emailOrUsername, setEmailOrUsername] = useState("");
@@ -25,6 +28,16 @@ export default function Login() {
     const span = tracer.startSpan('login-form-submit');
     span.setAttribute('user', emailOrUsername);
 
+    / ── NEW BLOCK (inject traceparent header into fetch so backend continues same trace) ──
+    const ctx = api.trace.setSpan(api.context.active(), span);
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    propagator.inject(ctx, headers, {
+      set: (carrier, key, value) => { carrier[key] = value; }
+    });
+    // ─────────────────────────────────────────────────────────────────────────────────────
+    
     frontendMetrics.loginSubmits.add(1);
     frontendLogger.emit({
       severityText: 'INFO',
@@ -35,7 +48,8 @@ export default function Login() {
     try {
       const res = await fetch(`${process.env.REACT_APP_API_URL}/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        // ── UPDATED (headers now includes traceparent alongside Content-Type) ──
+        headers: headers,
         body: JSON.stringify({ emailOrUsername, password }),
       });
 
