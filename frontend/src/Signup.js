@@ -47,42 +47,60 @@ export default function Signup() {
     });
 
     try {
-           const res = await fetch(`${process.env.REACT_APP_API_URL}/signup`, {
+          try {
+      const responseSpan = tracer.startSpan('response-backend-to-frontend', {}, ctx);
+      const responseCtx = api.trace.setSpan(ctx, responseSpan);
+
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/login`, {
         method: "POST",
         headers: headers,
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ emailOrUsername, password }),
       });
 
-      // ── span event marks exact moment response arrived from backend ──
-      span.addEvent('response-received-from-backend', {
-        'http.status_code': res.status,
-      });
+      // ── child span 1: response received from backend ──
+      const receivedSpan = tracer.startSpan('response-received', {}, responseCtx);
+      receivedSpan.setAttribute('http.status_code', res.status);
+      receivedSpan.setAttribute('http.method', 'POST');
+      receivedSpan.setAttribute('http.url', '/login');
+      receivedSpan.end();
 
-      const responseStartTime = Date.now();
+      // ── child span 2: parse response body ──
+      const parseSpan = tracer.startSpan('response-parsed', {}, responseCtx);
       const data = await res.text();
-      const responseEndTime = Date.now();
+      parseSpan.setAttribute('response.message', data);
+      parseSpan.end();
+
+      // ── child span 3: update UI ──
+      const uiSpan = tracer.startSpan('ui-updated', {}, responseCtx);
       setMessage(data);
+      uiSpan.setAttribute('login.result', data.includes("successful") ? 'success' : 'failed');
+      uiSpan.end();
 
-      // ── span event marks when frontend finished processing response ──
-      span.addEvent('response-processed-on-frontend', {
-        'response.message': data,
-        'response.parse.ms': responseEndTime - responseStartTime,
-      });
-
-      span.setAttribute('response.received.ms', responseEndTime - responseStartTime);
       span.setAttribute('response.message', data);
       span.setAttribute('response.status', res.status);
-      span.setAttribute('user.username', username);
-      span.setAttribute('user.email', email);
 
-      frontendLogger.emit({
-        severityText: data.includes("created") ? 'INFO' : 'WARN',
-        body: `Signup result for ${username}: ${data}`,
-        attributes: { username, email, result: data },
-      });
+      if (data.includes("successful")) {
+        frontendMetrics.loginSuccess.add(1);
+        frontendLogger.emit({
+          severityText: 'INFO',
+          body: `Login SUCCESS for: ${emailOrUsername}`,
+          attributes: { emailOrUsername },
+        });
+        span.setAttribute('login.result', 'success');
+        responseSpan.setAttribute('login.result', 'success');
+      } else {
+        frontendMetrics.loginFail.add(1);
+        frontendLogger.emit({
+          severityText: 'WARN',
+          body: `Login FAILED for: ${emailOrUsername} — reason: ${data}`,
+          attributes: { emailOrUsername, reason: data },
+        });
+        span.setAttribute('login.result', 'failed');
+        span.setAttribute('login.reason', data);
+        responseSpan.setAttribute('login.result', 'failed');
+      }
 
-      span.setAttribute('signup.result', data.includes("created") ? 'success' : 'failed');
-      // ─────────────────────────────────────────────────────────────────
+      responseSpan.end();
 
     } catch (err) {
       span.setAttribute('error', true);
