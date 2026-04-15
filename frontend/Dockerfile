@@ -2,10 +2,8 @@ FROM node:20 AS build
 
 WORKDIR /app
 
-# Copy root package.json for dependencies
 COPY package*.json ./
 
-# Install OpenTelemetry browser packages
 RUN npm install @opentelemetry/sdk-trace-web \
     @opentelemetry/exporter-trace-otlp-http \
     @opentelemetry/auto-instrumentations-web \
@@ -17,16 +15,19 @@ RUN npm install @opentelemetry/sdk-trace-web \
     @opentelemetry/api-logs \
     @opentelemetry/api \
     @opentelemetry/resources
-    
-# Copy frontend folder
-COPY . .
-COPY .env ./
-ENV REACT_APP_OTEL_SERVICE_NAME=signup-frontend
 
-# Build React app
+COPY . .
+
+ARG REACT_APP_API_URL
+ARG REACT_APP_OTEL_SERVICE_NAME
+ARG REACT_APP_NGROK_URL
+
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV REACT_APP_OTEL_SERVICE_NAME=$REACT_APP_OTEL_SERVICE_NAME
+ENV REACT_APP_NGROK_URL=$REACT_APP_NGROK_URL
+
 RUN npm run build
 
-# Serve with Nginx
 FROM nginx:alpine
 COPY --from=build /app/build /usr/share/nginx/html
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
