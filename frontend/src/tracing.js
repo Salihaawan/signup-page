@@ -7,10 +7,8 @@ import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import * as logsAPI from '@opentelemetry/api-logs';
+import * as api from '@opentelemetry/api';
 import { resourceFromAttributes } from '@opentelemetry/resources';
-import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
-import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 
 const SERVICE_NAME = process.env.REACT_APP_OTEL_SERVICE_NAME || 'signup-frontend';
 const NGROK_URL = process.env.REACT_APP_NGROK_URL;
@@ -36,23 +34,8 @@ tracerProvider.register({
   contextManager: new ZoneContextManager(),
 });
 
-// Register fetch and XHR instrumentation — this is what creates frontend spans
-registerInstrumentations({
-  instrumentations: [
-    new FetchInstrumentation({
-      propagateTraceHeaderCorsUrls: [
-        new RegExp(`.*`),
-      ],
-      clearTimingResources: true,
-    }),
-    new XMLHttpRequestInstrumentation({
-      propagateTraceHeaderCorsUrls: [
-        new RegExp(`.*`),
-      ],
-    }),
-  ],
-  tracerProvider,
-});
+// Export tracer so components can create spans manually
+export const tracer = api.trace.getTracer(SERVICE_NAME);
 
 // 2. METRICS
 const metricExporter = new OTLPMetricExporter({
