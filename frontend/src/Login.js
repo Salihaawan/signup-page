@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import "./Login.css";
-// ── UPDATED IMPORT (added propagator and context imports here) ── 2nd import
+// ── UPDATED IMPORT (added propagator and context imports here) ──
 import { frontendMetrics, frontendLogger, tracer, propagator } from "./tracing";
 import * as api from '@opentelemetry/api';
 // ───────────────────────────────────────────────────────────────
@@ -11,7 +11,6 @@ export default function Login() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    // Manual span for page view
     const span = tracer.startSpan('login-page-view');
     frontendMetrics.loginPageViews.add(1);
     frontendLogger.emit({
@@ -24,22 +23,21 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Manual span for login request
     const span = tracer.startSpan('login-form-submit');
     span.setAttribute('user', emailOrUsername);
 
-    //── NEW BLOCK (inject traceparent header into fetch so backend continues same trace) ──
+    // ── inject traceparent header into fetch so backend continues same trace ──
     const ctx = api.trace.setSpan(api.context.active(), span);
     const headers = {
       "Content-Type": "application/json",
     };
     propagator.inject(ctx, headers, {
-  set: (carrier, key, value) => {
-    carrier[key] = value;
-  }
-});
-    // ─────────────────────────────────────────────────────────────────────────────────────
-    
+      set: (carrier, key, value) => {
+        carrier[key] = value;
+      }
+    });
+    // ─────────────────────────────────────────────────────────────────────────
+
     frontendMetrics.loginSubmits.add(1);
     frontendLogger.emit({
       severityText: 'INFO',
@@ -50,19 +48,20 @@ export default function Login() {
     try {
       const res = await fetch(`${process.env.REACT_APP_API_URL}/login`, {
         method: "POST",
-        // ── UPDATED (headers now includes traceparent alongside Content-Type) ──
         headers: headers,
         body: JSON.stringify({ emailOrUsername, password }),
       });
-// ── NEW SPAN (wraps response processing — from backend reply to UI display) ──
-      let responseSpan;
-      api.context.with(ctx, () => {
-       responseSpan = tracer.startSpan('login-response-processing');
-   });
-      // ─────────────────────────────────────────────────────────────────────────────
 
+      // ── response time tracking using span attributes ──
+      const responseStartTime = Date.now();
       const data = await res.text();
+      const responseEndTime = Date.now();
       setMessage(data);
+
+      // ── add response timing as span attributes directly on main span ──
+      span.setAttribute('response.received.ms', responseEndTime - responseStartTime);
+      span.setAttribute('response.message', data);
+      span.setAttribute('response.status', res.status);
 
       if (data.includes("successful")) {
         frontendMetrics.loginSuccess.add(1);
@@ -72,10 +71,6 @@ export default function Login() {
           attributes: { emailOrUsername },
         });
         span.setAttribute('login.result', 'success');
-        // ── NEW (mark response span with result) ──
-        responseSpan.setAttribute('login.result', 'success');
-        responseSpan.setAttribute('response.message', data);
-        // ──────────────────────────────────────── 
       } else {
         frontendMetrics.loginFail.add(1);
         frontendLogger.emit({
@@ -85,15 +80,9 @@ export default function Login() {
         });
         span.setAttribute('login.result', 'failed');
         span.setAttribute('login.reason', data);
-        // ── NEW (mark response span with failure) ──
-        responseSpan.setAttribute('login.result', 'failed');
-        responseSpan.setAttribute('login.reason', data);
-        responseSpan.setAttribute('response.message', data);
-        // ────────────────────────────────────────── 
       }
-       // ── NEW (close response span here after UI updated) ──
-      responseSpan.end();
-      // ─────────────────────────────────────────────────────
+      // ─────────────────────────────────────────────────────────────────
+
     } catch (err) {
       span.setAttribute('error', true);
       span.setAttribute('error.message', err.message);
