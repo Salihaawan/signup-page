@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import "./Signup.css";
-import { frontendMetrics, frontendLogger } from "./tracing";
+import { frontendMetrics, frontendLogger, tracer } from "./tracing";
 
 export default function Signup() {
   const [username, setUsername] = useState("");
@@ -8,19 +8,24 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  // Track page view when Signup page loads
   useEffect(() => {
+    // Manual span for page view
+    const span = tracer.startSpan('signup-page-view');
     frontendMetrics.signupPageViews.add(1);
     frontendLogger.emit({
       severityText: 'INFO',
       body: 'User opened Signup page',
     });
+    span.end();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Track form submission
+    // Manual span for signup request
+    const span = tracer.startSpan('signup-form-submit');
+    span.setAttribute('user', username);
+
     frontendMetrics.signupSubmits.add(1);
     frontendLogger.emit({
       severityText: 'INFO',
@@ -28,20 +33,29 @@ export default function Signup() {
       attributes: { username, email },
     });
 
-    const res = await fetch(`${process.env.REACT_APP_API_URL}/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, email, password }),
-    });
+    try {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password }),
+      });
 
-    const data = await res.text();
-    setMessage(data);
+      const data = await res.text();
+      setMessage(data);
 
-    frontendLogger.emit({
-      severityText: data.includes("created") ? 'INFO' : 'WARN',
-      body: `Signup result for ${username}: ${data}`,
-      attributes: { username, email, result: data },
-    });
+      frontendLogger.emit({
+        severityText: data.includes("created") ? 'INFO' : 'WARN',
+        body: `Signup result for ${username}: ${data}`,
+        attributes: { username, email, result: data },
+      });
+
+      span.setAttribute('signup.result', data.includes("created") ? 'success' : 'failed');
+    } catch (err) {
+      span.setAttribute('error', true);
+      span.setAttribute('error.message', err.message);
+    } finally {
+      span.end();
+    }
   };
 
   return (
