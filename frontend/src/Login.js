@@ -41,15 +41,15 @@ export default function Login() {
       attributes: { emailOrUsername },
     });
 
-    try {
-      const responseSpan = tracer.startSpan('response-backend-to-frontend', {}, ctx);
-      const responseCtx = api.trace.setSpan(ctx, responseSpan);
-
+     try {
       const res = await fetch(`${process.env.REACT_APP_API_URL}/login`, {
         method: "POST",
         headers: headers,
         body: JSON.stringify({ emailOrUsername, password }),
       });
+
+      const responseSpan = tracer.startSpan('response-backend-to-frontend', {}, ctx);
+      const responseCtx = api.trace.setSpan(ctx, responseSpan);
 
       const receivedSpan = tracer.startSpan('response-received', {}, responseCtx);
       receivedSpan.setAttribute('http.status_code', res.status);
@@ -99,6 +99,7 @@ export default function Login() {
     } finally {
       span.end();
     }
+      
   };
 
   return (
