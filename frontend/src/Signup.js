@@ -43,14 +43,14 @@ export default function Signup() {
     });
 
     try {
-      const responseSpan = tracer.startSpan('response-backend-to-frontend', {}, ctx);
-      const responseCtx = api.trace.setSpan(ctx, responseSpan);
-
       const res = await fetch(`${process.env.REACT_APP_API_URL}/signup`, {
         method: "POST",
         headers: headers,
         body: JSON.stringify({ username, email, password }),
       });
+
+      const responseSpan = tracer.startSpan('response-backend-to-frontend', {}, ctx);
+      const responseCtx = api.trace.setSpan(ctx, responseSpan);
 
       const receivedSpan = tracer.startSpan('response-received', {}, responseCtx);
       receivedSpan.setAttribute('http.status_code', res.status);
@@ -92,7 +92,7 @@ export default function Signup() {
       span.setAttribute('error.message', err.message);
     } finally {
       span.end();
-    }
+    } 
   };
 
   return (
