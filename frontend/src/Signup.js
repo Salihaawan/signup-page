@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
-import "./Login.css";
+import "./Signup.css";
 import { frontendMetrics, frontendLogger, tracer, propagator } from "./tracing";
 import * as api from '@opentelemetry/api';
 
-export default function Login() {
-  const [emailOrUsername, setEmailOrUsername] = useState("");
+export default function Signup() {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const span = tracer.startSpan('login-page-view');
-    frontendMetrics.loginPageViews.add(1);
+    const span = tracer.startSpan('signup-page-view');
+    frontendMetrics.signupPageViews.add(1);
     frontendLogger.emit({
       severityText: 'INFO',
-      body: 'User opened Login page',
+      body: 'User opened Signup page',
     });
     span.end();
   }, []);
@@ -21,8 +22,8 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const span = tracer.startSpan('login-form-submit');
-    span.setAttribute('user', emailOrUsername);
+    const span = tracer.startSpan('signup-form-submit');
+    span.setAttribute('user', username);
 
     const ctx = api.trace.setSpan(api.context.active(), span);
     const headers = {
@@ -34,62 +35,55 @@ export default function Login() {
       }
     });
 
-    frontendMetrics.loginSubmits.add(1);
+    frontendMetrics.signupSubmits.add(1);
     frontendLogger.emit({
       severityText: 'INFO',
-      body: `Login form submitted for: ${emailOrUsername}`,
-      attributes: { emailOrUsername },
+      body: `Signup form submitted for: ${username}`,
+      attributes: { username, email },
     });
 
     try {
       const responseSpan = tracer.startSpan('response-backend-to-frontend', {}, ctx);
       const responseCtx = api.trace.setSpan(ctx, responseSpan);
 
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/login`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/signup`, {
         method: "POST",
         headers: headers,
-        body: JSON.stringify({ emailOrUsername, password }),
+        body: JSON.stringify({ username, email, password }),
       });
 
       const receivedSpan = tracer.startSpan('response-received', {}, responseCtx);
       receivedSpan.setAttribute('http.status_code', res.status);
       receivedSpan.setAttribute('http.method', 'POST');
-      receivedSpan.setAttribute('http.url', '/login');
+      receivedSpan.setAttribute('http.url', '/signup');
       receivedSpan.end();
 
       const parseSpan = tracer.startSpan('response-parsed', {}, responseCtx);
       const data = await res.text();
       parseSpan.setAttribute('response.message', data);
+      parseSpan.setAttribute('user.username', username);
+      parseSpan.setAttribute('user.email', email);
       parseSpan.end();
 
       const uiSpan = tracer.startSpan('ui-updated', {}, responseCtx);
       setMessage(data);
-      uiSpan.setAttribute('login.result', data.includes("successful") ? 'success' : 'failed');
+      uiSpan.setAttribute('signup.result', data.includes("created") ? 'success' : 'failed');
       uiSpan.end();
 
       span.setAttribute('response.message', data);
       span.setAttribute('response.status', res.status);
+      span.setAttribute('user.username', username);
+      span.setAttribute('user.email', email);
 
-      if (data.includes("successful")) {
-        frontendMetrics.loginSuccess.add(1);
-        frontendLogger.emit({
-          severityText: 'INFO',
-          body: `Login SUCCESS for: ${emailOrUsername}`,
-          attributes: { emailOrUsername },
-        });
-        span.setAttribute('login.result', 'success');
-        responseSpan.setAttribute('login.result', 'success');
-      } else {
-        frontendMetrics.loginFail.add(1);
-        frontendLogger.emit({
-          severityText: 'WARN',
-          body: `Login FAILED for: ${emailOrUsername} — reason: ${data}`,
-          attributes: { emailOrUsername, reason: data },
-        });
-        span.setAttribute('login.result', 'failed');
-        span.setAttribute('login.reason', data);
-        responseSpan.setAttribute('login.result', 'failed');
-      }
+      frontendLogger.emit({
+        severityText: data.includes("created") ? 'INFO' : 'WARN',
+        body: `Signup result for ${username}: ${data}`,
+        attributes: { username, email, result: data },
+      });
+
+      span.setAttribute('signup.result', data.includes("created") ? 'success' : 'failed');
+      responseSpan.setAttribute('signup.result', data.includes("created") ? 'success' : 'failed');
+      responseSpan.setAttribute('response.message', data);
 
       responseSpan.end();
 
@@ -103,13 +97,14 @@ export default function Login() {
 
   return (
     <div className="form-container">
-      <h2>Welcome Back</h2>
+      <h2>Create Your Account</h2>
       <form onSubmit={handleSubmit}>
-        <input placeholder="Username or Email" onChange={e => setEmailOrUsername(e.target.value)} />
+        <input placeholder="Username" onChange={e => setUsername(e.target.value)} />
+        <input placeholder="Email" onChange={e => setEmail(e.target.value)} />
         <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
-        <button type="submit">Login</button>
+        <button type="submit">Signup</button>
       </form>
-      {message && <p className={message.includes("successful") ? "message success" : "message error"}>{message}</p>}
+      {message && <p className="message success">{message}</p>}
     </div>
   );
 }
