@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import "./Login.css";
-// ── UPDATED IMPORT (added propagator and context imports here) ──
 import { frontendMetrics, frontendLogger, tracer, propagator } from "./tracing";
 import * as api from '@opentelemetry/api';
-// ───────────────────────────────────────────────────────────────
 
 export default function Login() {
   const [emailOrUsername, setEmailOrUsername] = useState("");
@@ -26,7 +24,6 @@ export default function Login() {
     const span = tracer.startSpan('login-form-submit');
     span.setAttribute('user', emailOrUsername);
 
-    // ── inject traceparent header into fetch so backend continues same trace ──
     const ctx = api.trace.setSpan(api.context.active(), span);
     const headers = {
       "Content-Type": "application/json",
@@ -36,7 +33,6 @@ export default function Login() {
         carrier[key] = value;
       }
     });
-    // ─────────────────────────────────────────────────────────────────────────
 
     frontendMetrics.loginSubmits.add(1);
     frontendLogger.emit({
@@ -46,7 +42,7 @@ export default function Login() {
     });
 
     try {
-       const responseSpan = tracer.startSpan('response-backend-to-frontend', {}, ctx);
+      const responseSpan = tracer.startSpan('response-backend-to-frontend', {}, ctx);
       const responseCtx = api.trace.setSpan(ctx, responseSpan);
 
       const res = await fetch(`${process.env.REACT_APP_API_URL}/login`, {
@@ -55,20 +51,17 @@ export default function Login() {
         body: JSON.stringify({ emailOrUsername, password }),
       });
 
-      // ── child span 1: response received from backend ──
       const receivedSpan = tracer.startSpan('response-received', {}, responseCtx);
       receivedSpan.setAttribute('http.status_code', res.status);
       receivedSpan.setAttribute('http.method', 'POST');
       receivedSpan.setAttribute('http.url', '/login');
       receivedSpan.end();
 
-      // ── child span 2: parse response body ──
       const parseSpan = tracer.startSpan('response-parsed', {}, responseCtx);
       const data = await res.text();
       parseSpan.setAttribute('response.message', data);
       parseSpan.end();
 
-      // ── child span 3: update UI ──
       const uiSpan = tracer.startSpan('ui-updated', {}, responseCtx);
       setMessage(data);
       uiSpan.setAttribute('login.result', data.includes("successful") ? 'success' : 'failed');
@@ -105,15 +98,16 @@ export default function Login() {
       span.setAttribute('error.message', err.message);
     } finally {
       span.end();
-    } 
+    }
+  };
 
   return (
     <div className="form-container">
-      <h2>🌸 Welcome Back</h2>
+      <h2>Welcome Back</h2>
       <form onSubmit={handleSubmit}>
         <input placeholder="Username or Email" onChange={e => setEmailOrUsername(e.target.value)} />
         <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
-        <button type="submit">Login 💕</button>
+        <button type="submit">Login</button>
       </form>
       {message && <p className={message.includes("successful") ? "message success" : "message error"}>{message}</p>}
     </div>
